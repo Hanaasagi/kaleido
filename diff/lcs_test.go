@@ -1,4 +1,4 @@
-package lcs
+package diff
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ func intPtr(i int) *int {
 	return &i
 }
 
-func TestDiff(t *testing.T) {
+func TestLcsDiff(t *testing.T) {
 	tests := []struct {
 		left     []int
 		right    []int
@@ -47,7 +47,7 @@ func TestDiff(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		result := Diff(tt.left, tt.right)
+		result := LcsDiff(tt.left, tt.right)
 		ok := true
 		if len(result) != len(tt.expected) {
 			ok = false

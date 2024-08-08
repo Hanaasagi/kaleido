@@ -37,9 +37,9 @@ func processFiles(oldFile, newFile string) error {
 		return fmt.Errorf("failed to read new file %s: %v", newFile, err)
 	}
 
-	result := lcs.Diff(oldLines, newLines)
+	result := diff.Diff(oldLines, newLines, diff.Lcs)
 
-	lcs.DisplayDiff[string](result, func(s string) string {
+	diff.DisplayDiff[string](result, func(s string) string {
 		return s
 	})
 
