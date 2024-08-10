@@ -38,6 +38,7 @@ func processFiles(oldFile, newFile string) error {
 	}
 
 	result := diff.Diff(oldLines, newLines, diff.Lcs)
+	// result := diff.Diff(oldLines, newLines, diff.Myers)
 
 	diff.DisplayDiff[string](result, func(s string) string {
 		return s
