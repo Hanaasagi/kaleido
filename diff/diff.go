@@ -1,6 +1,8 @@
 package diff
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // DiffResult is an interface for the different types of diff results.
 type DiffResult[T comparable] interface {
@@ -72,27 +74,6 @@ func (r Removed[T]) Data() T {
 	return r.data
 }
 
-const (
-	Reset  = "\033[0m"
-	Red    = "\033[31m"
-	Green  = "\033[32m"
-	Yellow = "\033[33m"
-)
-
-// DisplayDiff displays the diff result in a human readable format
-func DisplayDiff[T comparable](diffResult []DiffResult[T], formatFunc func(T) string) {
-	for _, diff := range diffResult {
-		switch v := diff.(type) {
-		case Common[T]:
-			fmt.Printf("%s%s%s\n", Yellow, formatFunc(v.Data()), Reset)
-		case Added[T]:
-			fmt.Printf("%s+ %s%s\n", Green, formatFunc(v.Data()), Reset)
-		case Removed[T]:
-			fmt.Printf("%s- %s%s\n", Red, formatFunc(v.Data()), Reset)
-		}
-	}
-}
-
 type DiffAlgorithm int
 
 const (
@@ -115,7 +96,28 @@ func Diff[T comparable](oldSeq, newSeq []T, algorithm DiffAlgorithm) []DiffResul
 	case Lcs:
 		return LcsDiff(oldSeq, newSeq)
 	case Myers:
-		panic("unimplemented")
+		return MyersDiff(oldSeq, newSeq)
 	}
 	panic("unknown")
+}
+
+const (
+	Reset  = "\033[0m"
+	Red    = "\033[31m"
+	Green  = "\033[32m"
+	Yellow = "\033[33m"
+)
+
+// DisplayDiff displays the diff result in a human readable format
+func DisplayDiff[T comparable](diffResult []DiffResult[T], formatFunc func(T) string) {
+	for _, diff := range diffResult {
+		switch v := diff.(type) {
+		case Common[T]:
+			fmt.Printf("%s%s%s\n", Yellow, formatFunc(v.Data()), Reset)
+		case Added[T]:
+			fmt.Printf("%s+ %s%s\n", Green, formatFunc(v.Data()), Reset)
+		case Removed[T]:
+			fmt.Printf("%s- %s%s\n", Red, formatFunc(v.Data()), Reset)
+		}
+	}
 }

@@ -15,7 +15,7 @@ func createTable[T comparable](column, row []T) [][]int {
 		table[i] = make([]int, columnLen+1)
 	}
 
-	// printTable(table, left, right)
+	// displayTable(table, column, row)
 
 	for i := rowLen - 1; i >= 0; i-- {
 		for j := columnLen - 1; j >= 0; j-- {
@@ -24,7 +24,7 @@ func createTable[T comparable](column, row []T) [][]int {
 			} else {
 				table[i][j] = max(table[i+1][j], table[i][j+1])
 			}
-			// printTable(table, left, right)
+			// displayTable(table, column, row)
 		}
 	}
 	return table
@@ -100,12 +100,12 @@ func LcsDiff[T comparable](oldSeq, newSeq []T) []DiffResult[T] {
 			result = append(result, Common[T]{oldIndex: cloneAndGetPtr(oldIndex), newIndex: cloneAndGetPtr(newIndex), data: newSeq[newIndex]})
 			j++
 			i++
-		} else if table[j+1][i] >= table[j][i+1] {
-			result = append(result, Added[T]{oldIndex: nil, newIndex: cloneAndGetPtr(newIndex), data: newSeq[newIndex]})
-			j++
-		} else {
+		} else if table[j+1][i] <= table[j][i+1] {
 			result = append(result, Removed[T]{oldIndex: cloneAndGetPtr(oldIndex), newIndex: nil, data: oldSeq[oldIndex]})
 			i++
+		} else {
+			result = append(result, Added[T]{oldIndex: nil, newIndex: cloneAndGetPtr(newIndex), data: newSeq[newIndex]})
+			j++
 		}
 	}
 
