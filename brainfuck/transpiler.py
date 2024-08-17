@@ -7,8 +7,8 @@ import subprocess
 import sys
 import types
 import warnings
-
-from typing import Any, Callable, List
+from collections import namedtuple
+from typing import Any, Callable, List, Tuple
 
 """
 Runtime environment
@@ -75,10 +75,14 @@ def define(name: str, trailing_cache: int) -> Callable[[int], ByteCode]:
     :return: CPython bytecode wrapper
     """
 
-    def wraps(arg: int):
+    def wraps(arg: int) -> ByteCode:
         return ByteCode(name, arg, trailing_cache)
 
     return wraps
+
+
+def occupied_size(bytecode: List[ByteCode]) -> int:
+    return sum(b.occupied_size for b in bytecode)
 
 
 # access constants
@@ -301,12 +305,12 @@ class CodeGenerator:
         ]
 
     def loop_begin_occupied_size(self) -> int:
-        size = sum(map(operator.attrgetter("occupied_size"), self.loop_begin(0)))
+        size: int = sum(map(operator.attrgetter("occupied_size"), self.loop_begin(0)))
         assert size == 10
         return size
 
     def loop_end_occupied_size(self) -> int:
-        size = sum(map(operator.attrgetter("occupied_size"), self.loop_end(0)))
+        size: int = sum(map(operator.attrgetter("occupied_size"), self.loop_end(0)))
         assert size == 3
         return size
 
@@ -334,11 +338,11 @@ class Scanner:
         self._read_one()
         return char
 
-    def close(self):
+    def close(self) -> None:
         if hasattr(self, "fd") and not self.fd.closed:
             self.fd.close()
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.close()
 
 
@@ -360,18 +364,27 @@ class Transpiler:
         self.source_path = source_path
         self.output_path = output_path
 
-        self.loop_stack = []
         self.codegen = CodeGenerator(self.constants, self.names, self.varnames)
 
-    def parse_and_generate_bytecode(self):
-        def occupied_size(bytecode):
-            return sum(b.occupied_size for b in bytecode)
+    def parse_and_generate_bytecode(self) -> List[ByteCode]:
+        scanner = Scanner(self.source_path)
 
+        # initialize
         bytecode = [RESUME(0)]
         bytecode.extend(self.codegen.memset_stack())
         bytecode.extend(self.codegen.memset_ptr())
 
-        scanner = Scanner(self.source_path)
+        LoopStackItem = namedtuple(
+            "LoopStackItem", ["bytecode_offset", "bytecode_size_offset"]
+        )
+        loop_stack: List[LoopStackItem] = []
+
+        current_occupied_size = occupied_size(bytecode)
+
+        def append_bytecode(_bytecode: List[ByteCode]) -> None:
+            nonlocal current_occupied_size
+            bytecode.extend(_bytecode)
+            current_occupied_size += occupied_size(_bytecode)
 
         while True:
             char = scanner.peek()
@@ -380,32 +393,32 @@ class Transpiler:
             scanner.consume()
 
             if char == ">":
-                bytecode.extend(self.codegen.increment_ptr())
+                append_bytecode(self.codegen.increment_ptr())
             elif char == "<":
-                bytecode.extend(self.codegen.decrement_ptr())
+                append_bytecode(self.codegen.decrement_ptr())
             elif char == "+":
-                bytecode.extend(self.codegen.increment_value())
+                append_bytecode(self.codegen.increment_value())
             elif char == "-":
-                bytecode.extend(self.codegen.decrement_value())
+                append_bytecode(self.codegen.decrement_value())
             elif char == ".":
-                bytecode.extend(self.codegen.output_value())
+                append_bytecode(self.codegen.output_value())
             elif char == ",":
-                bytecode.extend(self.codegen.input_value())
+                append_bytecode(self.codegen.input_value())
             elif char == "[":
-                self.loop_stack.append(len(bytecode))
+                loop_stack.append(LoopStackItem(len(bytecode), current_occupied_size))
                 # -1 is placeholder
-                bytecode.extend(self.codegen.loop_begin(-1))
+                append_bytecode(self.codegen.loop_begin(-1))
             elif char == "]":
-                if not self.loop_stack:
+                if not loop_stack:
                     raise ValueError("Unmatched ']' encountered")
 
-                loop_begin = self.loop_stack.pop()
+                loop_begin, occupied_size_before_loop = loop_stack.pop()
                 offset = (
-                    occupied_size(bytecode)
-                    - occupied_size(bytecode[:loop_begin])
+                    current_occupied_size
+                    - occupied_size_before_loop
                     + self.codegen.loop_end_occupied_size()
                 )
-                bytecode.extend(self.codegen.loop_end(offset))
+                append_bytecode(self.codegen.loop_end(offset))
 
                 offset -= self.codegen.loop_begin_occupied_size()
                 # replace the placeholder
@@ -413,14 +426,14 @@ class Transpiler:
                 bytecode[loop_begin + 6].operand = (offset >> 8) & 0xFF
                 bytecode[loop_begin + 7].operand = offset & 0xFF
 
-        if self.loop_stack:
+        if loop_stack:
             raise ValueError("Unmatched '[' encountered")
 
         bytecode.append(POP_TOP(0))
         bytecode.append(RETURN_CONST(self.codegen.const_index(None)))
         return bytecode
 
-    def run(self):
+    def run(self) -> None:
         bytecode = self.parse_and_generate_bytecode()
         code_object = self.gen_py_code_object(bytecode)
         if DEBUG:
