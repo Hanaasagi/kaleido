@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import types
+import warnings
 
 from typing import Any, Callable, List
 
@@ -488,6 +489,10 @@ def parse_arguments() -> str:
 
 
 if __name__ == "__main__":
+    py_version = sys.version_info
+    if py_version.major != 3 and py_version.minor != 12:
+        warnings.warn("This script only tests on Python 3.12")
+
     file_path = parse_arguments()
     path_without_ext, ext = os.path.splitext(file_path)
     pyc_path = path_without_ext + ".pyc"
