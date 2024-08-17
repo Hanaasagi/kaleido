@@ -123,6 +123,7 @@ KW_NAMES = define("KW_NAMES", 0)
 NB_MULTIPLY = 5
 NB_ADD = 13
 NB_SUBTRACT = 23
+CMP_EQ = 40
 
 ################################################################################
 #                               Code Gen
@@ -281,7 +282,7 @@ class CodeGenerator:
             LOAD_FAST(self.varname_index("ptr")),
             BINARY_SUBSCR(0),
             LOAD_CONST(self.const_index(0)),
-            COMPARE_OP(40),
+            COMPARE_OP(CMP_EQ),
             # for long jump
             EXTENDED_ARG((offset >> 16) & 0xFF),
             EXTENDED_ARG((offset >> 8) & 0xFF),
