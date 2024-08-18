@@ -1,5 +1,5 @@
-#include "compiler.h"
 #include "interpreter.h"
+#include "parser.h"
 #include <errno.h>
 #include <stdio.h>
 
@@ -16,26 +16,26 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    compiler_t compiler;
-    compiler_new(&compiler, RUNTIME_STACK_SIZE);
+    parser_t parser;
+    parser_new(&parser, RUNTIME_STACK_SIZE);
 
-    int ret = compiler_parse_file(&compiler, fp);
+    int ret = parser_parse_file(&parser, fp);
     fclose(fp);
 
     if (ret != 0) {
         fprintf(stdout, "parse error: %d\n", errno);
-        compiler_free(&compiler);
+        parser_free(&parser);
         return ret;
     }
 
     interpreter_t interpreter;
-    interpreter_new(&interpreter, &compiler.opcodes);
+    interpreter_new(&interpreter, &parser.opcodes);
 
     ret = interpreter_run(&interpreter);
     if (ret != 0) {
         fprintf(stdout, "run error: %d\n", errno);
     }
 
-    compiler_free(&compiler);
+    parser_free(&parser);
     return ret;
 }

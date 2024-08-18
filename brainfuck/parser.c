@@ -1,25 +1,22 @@
-#include "compiler.h"
-#include <errno.h>
+#include "parser.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #define EPARSE_ERROR 1
 
-void compiler_new(compiler_t* compiler, size_t opcode_capacity)
+void parser_new(parser_t* parser, size_t opcode_capacity)
 {
-    vec_new(&compiler->opcodes, sizeof(Opcode), opcode_capacity);
+    vec_new(&parser->opcodes, sizeof(Opcode), opcode_capacity);
     return;
 }
 
-void compiler_free(compiler_t* compiler)
+void parser_free(parser_t* parser)
 {
-    vec_free(&compiler->opcodes);
+    vec_free(&parser->opcodes);
     return;
 }
 
-int compiler_parse_file(compiler_t* compiler, FILE* fp)
+int parser_parse_file(parser_t* parser, FILE* fp)
 {
     size_t stack[100];
     int stack_ptr = -1;
@@ -68,7 +65,7 @@ int compiler_parse_file(compiler_t* compiler, FILE* fp)
             break;
         case '[':
             op.type = LOOP_BEGIN;
-            stack[++stack_ptr] = compiler->opcodes.len;
+            stack[++stack_ptr] = parser->opcodes.len;
             break;
         case ']':
             if (stack_ptr < 0) {
@@ -76,13 +73,13 @@ int compiler_parse_file(compiler_t* compiler, FILE* fp)
                 return EPARSE_ERROR;
             }
             op.type = LOOP_END;
-            ((Opcode*)vec_get(&compiler->opcodes, stack[stack_ptr]))->operand = compiler->opcodes.len;
+            ((Opcode*)vec_get(&parser->opcodes, stack[stack_ptr]))->operand = parser->opcodes.len;
             op.operand = stack[stack_ptr--];
             break;
         default:
             continue;
         }
-        vec_push(&compiler->opcodes, &op);
+        vec_push(&parser->opcodes, &op);
     }
 
     if (stack_ptr >= 0) {

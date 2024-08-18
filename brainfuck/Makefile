@@ -6,8 +6,8 @@ SHELL := /bin/bash
 
 CC = gcc
 CFLAGS = -Wall -g
-OBJ = compiler.o interpreter.o main.o vec.o
-DEPS = compiler.h interpreter.h vec.h
+OBJ = parser.o interpreter.o main.o vec.o
+DEPS = parser.h interpreter.h vec.h
 BIN_DIR = bin
 TARGET = $(BIN_DIR)/interpreter
 

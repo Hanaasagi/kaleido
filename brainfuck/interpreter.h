@@ -1,7 +1,7 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "compiler.h"
+#include "parser.h"
 
 #define RUNTIME_STACK_SIZE 512
 #define ESTACK_OVERFLOW 2

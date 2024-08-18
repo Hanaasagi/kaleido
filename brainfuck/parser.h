@@ -1,5 +1,5 @@
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef PARSER_H
+#define PARSER_H
 
 #include "vec.h"
 #include <stdio.h>
@@ -20,12 +20,12 @@ typedef struct Opcode {
     size_t operand;
 } Opcode __attribute__((aligned(8)));
 
-typedef struct compiler {
+typedef struct parser {
     vec_t opcodes;
-} compiler_t __attribute__((aligned(8)));
+} parser_t __attribute__((aligned(8)));
 
-void compiler_new(compiler_t* compiler, size_t opcode_capacity);
-void compiler_free(compiler_t* compiler);
-int compiler_parse_file(compiler_t* compiler, FILE* fp);
+void parser_new(parser_t* parser, size_t opcode_capacity);
+void parser_free(parser_t* parser);
+int parser_parse_file(parser_t* parser, FILE* fp);
 
 #endif
