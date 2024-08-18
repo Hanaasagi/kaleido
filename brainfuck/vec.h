@@ -31,4 +31,7 @@ void* vec_get(vec_t* vec, size_t index);
 //
 void vec_iterate(vec_t* vec, void (*func)(void*));
 
+//
+int vec_extend_from_slice(vec_t* vec, const void* slice, size_t len);
+
 #endif

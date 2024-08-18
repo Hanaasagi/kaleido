@@ -72,3 +72,17 @@ void vec_iterate(vec_t* vec, void (*func)(void*))
         func(vec_get(vec, i));
     }
 }
+
+int vec_extend_from_slice(vec_t* vec, const void* slice, size_t len)
+{
+    if (vec->len == vec->capacity) {
+        int ret = vec_resize(vec, vec->capacity * 2);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+
+    memcpy((char*)vec->ptr + vec->len * vec->item_size, slice, len);
+    vec->len += len;
+    return 0;
+}
