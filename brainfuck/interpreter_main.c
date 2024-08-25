@@ -3,10 +3,16 @@
 #include <errno.h>
 #include <stdio.h>
 
+void print_help(const char* program_name)
+{
+    fprintf(stdout, "Usage: %s <input_file>\n", program_name);
+    fprintf(stdout, "  <input_file>  : The path to the source file.\n");
+}
+
 int main(int argc, char* argv[])
 {
     if (argc != 2) {
-        fprintf(stdout, "Usage: %s <filename>\n", argv[0]);
+        print_help(argv[0]);
         return 1;
     }
 

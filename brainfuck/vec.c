@@ -75,8 +75,8 @@ void vec_iterate(vec_t* vec, void (*func)(void*))
 
 int vec_extend_from_slice(vec_t* vec, const void* slice, size_t len)
 {
-    if (vec->len == vec->capacity) {
-        int ret = vec_resize(vec, vec->capacity * 2);
+    if (vec->len + len >= vec->capacity) {
+        int ret = vec_resize(vec, (vec->capacity + len) * 2);
         if (ret != 0) {
             return ret;
         }

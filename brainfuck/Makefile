@@ -6,17 +6,27 @@ SHELL := /bin/bash
 
 CC = gcc
 CFLAGS = -Wall -g
-OBJ = parser.o interpreter.o main.o vec.o
-DEPS = parser.h interpreter.h vec.h
 BIN_DIR = bin
-TARGET = $(BIN_DIR)/interpreter
+
+OBJ_COMMON = parser.o vec.o
+OBJ_INTERPRETER = interpreter.o interpreter_main.o $(OBJ_COMMON)
+OBJ_COMPILER = compiler.o compiler_main.o $(OBJ_COMMON)
+
+DEPS = parser.h interpreter.h vec.h compiler.h
+
+TARGET_INTERPRETER = $(BIN_DIR)/interpreter
+TARGET_COMPILER = $(BIN_DIR)/compiler
 
 help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-all: $(TARGET)  ## compile all
+all: $(TARGET_INTERPRETER) $(TARGET_COMPILER)  ## compile all
 
-$(TARGET): $(OBJ)  ## compile binary
+$(TARGET_INTERPRETER): $(OBJ_INTERPRETER)  ## compile interpreter binary
+	mkdir -p $(BIN_DIR)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+$(TARGET_COMPILER): $(OBJ_COMPILER)  ## compile compiler binary
 	mkdir -p $(BIN_DIR)
 	$(CC) -o $@ $^ $(CFLAGS)
 
@@ -24,7 +34,7 @@ $(TARGET): $(OBJ)  ## compile binary
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:  ## clean .o and bin
-	rm -f *.gch *.o $(TARGET)
+	rm -f *.gch *.o $(TARGET_INTERPRETER) $(TARGET_COMPILER)
 
 format:  ## Format
 	clang-format -i -style=Webkit *.c *.h
