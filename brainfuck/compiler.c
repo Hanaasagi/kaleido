@@ -107,19 +107,26 @@ int compiler_compile(compiler_t* compiler)
 {
     uint32_t memory_size = RUNTIME_STACK_SIZE;
 
+    // store 0
     compiler_asm_ins(compiler, 2, 0x31DB); // xor ebx, ebx
+    // store 1
     compiler_asm_ins(compiler, 6, 0x41BC01000000); // mov r12, 1
 
+    // alloc stack
     compiler_asm_ins(compiler, 3, 0x4881EC); // sub  rsp, ?
     compiler_asm_imm(compiler, 4, &memory_size);
     compiler_asm_ins(compiler, 3, 0x4889E6); // mov  rsi, rsp
-    compiler_asm_ins(compiler, 5, 0xBA01000000); // mov  edx, 0x1
 
-    compiler_asm_ins(compiler, 2, 0x30C0); // xor  al, al
-    compiler_asm_ins(compiler, 3, 0x4889E7); // mov  rdi, rsp
+    // memset zero
+    // https://www.cs.uaf.edu/2017/fall/cs301/lecture/10_06_string_inst.html
     compiler_asm_ins(compiler, 1, 0xB9); // mov  rcx, ?
     compiler_asm_imm(compiler, 4, &memory_size);
+    compiler_asm_ins(compiler, 2, 0x30C0); // xor  al, al
+    compiler_asm_ins(compiler, 3, 0x4889E7); // mov  rdi, rsp
     compiler_asm_ins(compiler, 2, 0xF3AA); // rep stosb
+
+    // read syscall and write syscall arg2
+    compiler_asm_ins(compiler, 5, 0xBA01000000); // mov  edx, 0x1
 
     uint32_t* table = malloc(sizeof(table[0]) * compiler->opcodes->len);
     for (size_t i = 0; i < compiler->opcodes->len; i++) {
@@ -130,27 +137,27 @@ int compiler_compile(compiler_t* compiler)
         case INCREMENT_PTR:
             // add rsi, byte ?
             // add rsi, ?
-            compiler_asm_ins(compiler, 3, (op->operand <= 127) ? 0x4883C6 : 0x4881C6);
-            compiler_asm_imm(compiler, (op->operand <= 127) ? 1 : 4, &op->operand);
+            compiler_asm_ins(compiler, 3, (op->operand <= 255) ? 0x4883C6 : 0x4881C6);
+            compiler_asm_imm(compiler, (op->operand <= 255) ? 1 : 4, &op->operand);
             break;
         case DECREMENT_PTR:
             // sub rsi, byte ?
             // sub rsi, ?
-            compiler_asm_ins(compiler, 3, (op->operand <= 127) ? 0x4883EE : 0x4881EE);
-            compiler_asm_imm(compiler, (op->operand <= 127) ? 1 : 4, &op->operand);
+            compiler_asm_ins(compiler, 3, (op->operand <= 255) ? 0x4883EE : 0x4881EE);
+            compiler_asm_imm(compiler, (op->operand <= 255) ? 1 : 4, &op->operand);
             break;
         case INCREMENT_VAL:
             // add byte [rsi], ?
             // add dword [rsi], ?
             // Actually, there's no need to consider the operand size here since each memory unit is 8 bits.
-            compiler_asm_ins(compiler, 2, (op->operand <= 127) ? 0x8006 : 0x8306);
-            compiler_asm_imm(compiler, (op->operand <= 127) ? 1 : 4, &op->operand);
+            compiler_asm_ins(compiler, 2, (op->operand <= 255) ? 0x8006 : 0x8306);
+            compiler_asm_imm(compiler, (op->operand <= 255) ? 1 : 4, &op->operand);
             break;
         case DECREMENT_VAL:
             // sub byte [rsi], ?
             // sub dword [rsi], ?
-            compiler_asm_ins(compiler, 2, (op->operand <= 127) ? 0x802E : 0x832E);
-            compiler_asm_imm(compiler, (op->operand <= 127) ? 1 : 4, &op->operand);
+            compiler_asm_ins(compiler, 2, (op->operand <= 255) ? 0x802E : 0x832E);
+            compiler_asm_imm(compiler, (op->operand <= 255) ? 1 : 4, &op->operand);
             break;
         case OUTPUT_VAL:
             // mov  rdi, r12

@@ -20,6 +20,8 @@ _start:
     sub esp, byte 0
     sub rsp, byte 0
     sub rsp, 0xffff
+    add rsp, byte 0
+    add rsp, 0xffff
     sub byte [rsp], 0
     sub dword [rsp], 0
 
