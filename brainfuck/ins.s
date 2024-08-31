@@ -5,6 +5,8 @@ _start:
     xor ebx, ebx
     mov rax, r12
     mov rax, 0
+    mov rax, 0
+    mov rax, 1
 
     sub rsi, 0
     mov rsi, rsp
@@ -26,6 +28,7 @@ _start:
     sub dword [rsp], 0
 
     mov rdi, r12
+    mov rdi, 1
     mov rdi, rsp
     xor rdi, rdi
     xor al, al
