@@ -1,0 +1,27 @@
+[project]
+name = "memo-chat"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27.0",
+    "psycopg[binary]>=3.2.0",
+    "pgvector>=0.3.0",
+    "textual>=8.1.1",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
+    "openai>=2.29.0",
+    "json-repair>=0.58.6",
+    "uuid7>=0.1.0",
+]
+
+[project.scripts]
+memo-chat = "memo_chat.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
