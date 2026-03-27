@@ -59,8 +59,8 @@ def main() -> None:
         )
         console.print()
         # Reprint final response after streamed output for clarity.
-        console.print(f"[dim]Final:[/] {turn.streamed_response}")
-        console.print()
+        # console.print(f"[dim]Final:[/] {turn.streamed_response}")
+        # console.print()
 
 
 if __name__ == "__main__":

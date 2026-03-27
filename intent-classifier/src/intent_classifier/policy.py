@@ -104,7 +104,9 @@ def _extract_hour(text: str) -> int | None:
     if not matched:
         return None
     hour = int(matched.group(1))
-    if hour <= 12 and re.search(r"(今晚|夜里|半夜|深夜|tonight|at night)", text.lower()):
+    if hour <= 12 and re.search(
+        r"(今晚|夜里|半夜|深夜|tonight|at night)", text.lower()
+    ):
         return min(23, hour + 12)
     return hour
 

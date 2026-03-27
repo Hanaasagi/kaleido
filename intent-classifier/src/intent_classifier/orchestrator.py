@@ -29,7 +29,9 @@ class IntentChatEngine:
         return list(self._history)
 
     def analyze_turn(self, user_text: str) -> IntentAnalysis:
-        analysis_prompt = build_analysis_user_prompt(user_text=user_text, history=self._history)
+        analysis_prompt = build_analysis_user_prompt(
+            user_text=user_text, history=self._history
+        )
         raw_analysis = self._llm.analyze_json(
             system_prompt=ANALYSIS_SYSTEM_PROMPT,
             user_prompt=analysis_prompt,
@@ -50,8 +52,12 @@ class IntentChatEngine:
         )
         analysis_for_generation = analysis.model_dump()
         analysis_for_generation.pop("candidate_followups", None)
-        analysis_json = json.dumps(analysis_for_generation, ensure_ascii=False, indent=2)
-        response_system = build_response_system_prompt(persona_block=self._persona_block())
+        analysis_json = json.dumps(
+            analysis_for_generation, ensure_ascii=False, indent=2
+        )
+        response_system = build_response_system_prompt(
+            persona_block=self._persona_block()
+        )
         response_user = build_response_user_prompt(
             user_text=user_text,
             analysis_json=analysis_json,
@@ -67,15 +73,21 @@ class IntentChatEngine:
         self._history.append({"role": "assistant", "text": reply})
         return TurnResult(analysis=analysis, streamed_response=reply)
 
-    def run_turn(self, user_text: str, on_response_delta: Callable[[str], None]) -> TurnResult:
+    def run_turn(
+        self, user_text: str, on_response_delta: Callable[[str], None]
+    ) -> TurnResult:
         analysis = self.analyze_turn(user_text)
-        return self.respond_turn(user_text=user_text, analysis=analysis, on_response_delta=on_response_delta)
+        return self.respond_turn(
+            user_text=user_text, analysis=analysis, on_response_delta=on_response_delta
+        )
 
     def _persona_block(self) -> str:
         tone = ", ".join(self._persona.tone)
         style_rules = "\n".join(f"- {rule}" for rule in self._persona.style_rules)
         boundaries = "\n".join(f"- {rule}" for rule in self._persona.boundaries)
-        preferences = "\n".join(f"- {rule}" for rule in self._persona.personal_preferences)
+        preferences = "\n".join(
+            f"- {rule}" for rule in self._persona.personal_preferences
+        )
         return (
             f"name: {self._persona.display_name}\n"
             f"relationship: {self._persona.relationship}\n"
@@ -106,17 +118,27 @@ class IntentChatEngine:
         if not isinstance(emotional_state, dict):
             emotional_state = {}
             data["emotional_state"] = emotional_state
-        emotional_state["valence"] = self._normalize_valence(emotional_state.get("valence"))
-        emotional_state["arousal"] = self._normalize_arousal(emotional_state.get("arousal"))
-        emotional_state["intensity"] = self._clamp_01(emotional_state.get("intensity", 0.5))
+        emotional_state["valence"] = self._normalize_valence(
+            emotional_state.get("valence")
+        )
+        emotional_state["arousal"] = self._normalize_arousal(
+            emotional_state.get("arousal")
+        )
+        emotional_state["intensity"] = self._clamp_01(
+            emotional_state.get("intensity", 0.5)
+        )
 
         confidence = data.get("confidence", {})
         if not isinstance(confidence, dict):
             confidence = {}
             data["confidence"] = confidence
         confidence["overall"] = self._clamp_01(confidence.get("overall", 0.5))
-        confidence["intent"] = self._clamp_01(confidence.get("intent", confidence["overall"]))
-        confidence["emotion"] = self._clamp_01(confidence.get("emotion", confidence["overall"]))
+        confidence["intent"] = self._clamp_01(
+            confidence.get("intent", confidence["overall"])
+        )
+        confidence["emotion"] = self._clamp_01(
+            confidence.get("emotion", confidence["overall"])
+        )
         confidence["interaction_need"] = self._clamp_01(
             confidence.get("interaction_need", confidence["overall"])
         )
@@ -126,6 +148,10 @@ class IntentChatEngine:
             strategy = {}
             data["strategy"] = strategy
         strategy["style"] = self._normalize_style(strategy.get("style"))
+        strategy["empathy_level"] = self._normalize_empathy_level(
+            strategy.get("empathy_level")
+        )
+        strategy["directness"] = self._normalize_directness(strategy.get("directness"))
 
         return data
 
@@ -191,6 +217,44 @@ class IntentChatEngine:
         if mapped in allowed:
             return mapped
         return "empathic_reflection"
+
+    def _normalize_empathy_level(self, value: object) -> str:
+        if isinstance(value, (int, float)):
+            v = self._clamp_01(value)
+            if v < 0.33:
+                return "low"
+            if v > 0.67:
+                return "high"
+            return "medium"
+        text = str(value or "").strip().lower()
+        mapping = {
+            "low": "low",
+            "medium": "medium",
+            "med": "medium",
+            "mid": "medium",
+            "high": "high",
+        }
+        return mapping.get(text, "medium")
+
+    def _normalize_directness(self, value: object) -> str:
+        if isinstance(value, (int, float)):
+            v = self._clamp_01(value)
+            if v < 0.33:
+                return "soft"
+            if v > 0.67:
+                return "direct"
+            return "balanced"
+        text = str(value or "").strip().lower()
+        mapping = {
+            "soft": "soft",
+            "gentle": "soft",
+            "balanced": "balanced",
+            "neutral": "balanced",
+            "middle": "balanced",
+            "direct": "direct",
+            "straightforward": "direct",
+        }
+        return mapping.get(text, "balanced")
 
     def _clamp_01(self, value: object) -> float:
         try:

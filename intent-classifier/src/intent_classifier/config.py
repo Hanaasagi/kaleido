@@ -1,32 +1,72 @@
 from __future__ import annotations
 
-import os
-from dataclasses import dataclass
 from pathlib import Path
 
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-@dataclass(frozen=True)
-class AppConfig:
-    api_key: str
-    base_url: str
-    analysis_model: str
-    response_model: str
-    persona_path: Path
-    analysis_temperature: float
-    response_temperature: float
+
+class AppConfig(BaseSettings):
+    """Application configuration loaded from environment variables and .env file."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # OpenAI API settings
+    api_key: str = Field(alias="OPENAI_API_KEY")
+    base_url: str = Field(
+        default="https://openrouter.ai/api/v1",
+        alias="OPENAI_BASE_URL",
+    )
+
+    # Model settings
+    analysis_model: str = Field(
+        default="openai/gpt-4.1-mini",
+        alias="ANALYSIS_MODEL",
+    )
+    response_model: str = Field(
+        default="openai/gpt-4.1-mini",
+        alias="RESPONSE_MODEL",
+    )
+
+    # Persona settings
+    persona_path: Path = Field(
+        default=Path("config/personas/girlfriend.toml"),
+        alias="PERSONA_PATH",
+    )
+
+    # Temperature settings
+    analysis_temperature: float = Field(
+        default=0.1,
+        alias="ANALYSIS_TEMPERATURE",
+        ge=0.0,
+        le=2.0,
+    )
+    response_temperature: float = Field(
+        default=0.8,
+        alias="RESPONSE_TEMPERATURE",
+        ge=0.0,
+        le=2.0,
+    )
+
+    @field_validator("api_key")
+    @classmethod
+    def validate_api_key(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("OPENAI_API_KEY is required.")
+        return v
+
+    @field_validator("persona_path", mode="before")
+    @classmethod
+    def validate_persona_path(cls, v: str | Path) -> Path:
+        return Path(v) if isinstance(v, str) else v
 
 
 def load_config() -> AppConfig:
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is required.")
-
-    return AppConfig(
-        api_key=api_key,
-        base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1").strip(),
-        analysis_model=os.getenv("ANALYSIS_MODEL", "openai/gpt-4.1-mini").strip(),
-        response_model=os.getenv("RESPONSE_MODEL", "openai/gpt-4.1-mini").strip(),
-        persona_path=Path(os.getenv("PERSONA_PATH", "config/personas/girlfriend.toml")),
-        analysis_temperature=float(os.getenv("ANALYSIS_TEMPERATURE", "0.1")),
-        response_temperature=float(os.getenv("RESPONSE_TEMPERATURE", "0.8")),
-    )
+    """Load and validate application configuration."""
+    return AppConfig()
